@@ -1,3 +1,9 @@
+/**
+ * 2021-01-24 
+ * 파일첨부, 이름 다 리스트화
+ */
+
+
 imageUtil = {
 
 	maxSize: 1280
@@ -5,7 +11,12 @@ imageUtil = {
 	,permitByte : null
 	,canvas: null
 	,selectedFileList : []
-		
+	,selectedFileNameList : []
+	,encodedFileInfo : {}
+	,encodedFileList : []
+	,propsList : []
+	,propsObj : {}
+	
 	,init: function () {
 			var _this = this;
 			_this.registEvent();
@@ -16,43 +27,59 @@ imageUtil = {
 		var _this = this;
 			var len = $("[data-wv-encoding-img-ready]").length;
 
+			//파일첨부할때마다
 			for (var i = 0; i < len; i++) {
 				(function (index) {
-					_this.selectedFileList = [];
 					$($("[data-wv-encoding-img-ready]")[index]).on("change", _this.onImageSelected);
-					$($("[data-wv-encoding-img-send]")[index]).on("click", _this.onUploadBtnClick);
 				})(i);
 			}
+			//최종 버튼 눌렀을 떄
+			$($("[data-wv-encoding-img-send]")[0]).on("click", _this.onUploadBtnClick);
 		}
 
 	,onUploadBtnClick : function(e){
 		var len = imageUtil.selectedFileList.length;
 
 		for (var i = 0; i < len; i++) {
-			imageUtil.compressImageByData(imageUtil.selectedFileList[i], 1280, 0.8, function (result) {
-				imageUtil.doUpload(result);
-			});
+			(function(j){
+				imageUtil.compressImageByData(imageUtil.selectedFileList[j], 1280, 0.2, function (result) {
+					imageUtil.encodedFileInfo = {};
+					imageUtil.encodedFileInfo.fileData = result;
+					imageUtil.encodedFileInfo.fileName = imageUtil.selectedFileNameList[j];
+					imageUtil.encodedFileList.push(imageUtil.encodedFileInfo);
+					if(len === j+1){
+						imageUtil.doUpload(imageUtil.encodedFileList);
+					}
+				});
+			})(i);
 		}
 	}
+
 	, onImageSelected: function (e) {
 		imageUtil.setProps(e.target);
 		//imageUtil.selectedFileList.length = 0;
 		var inputField = e.target; // 첫번째 ready 태그 가져오고
 		var files = inputField.files; //그에 대한 파일을 담는다.
-
 		$.each(files, function (index, file) { //파일첨부가 여러개일때에 대한.
 			var reader = new FileReader();
 			reader.onload = function (e) {
+				console.log("파일 사이즈 : " + file.size , "허용치 : " + parseInt(imageUtil.propsList[0].permitByte));
+				// if(parseInt(imageUtil.propsList[index].permitByte) < file.size){
+				// 	alert("허용 파일 크기를 초과했습니다.");
+				// 	console.log(inputField);
+				// 	$(inputField).val("");
+				// 	return false;
+				// }
 				imageUtil.selectedFileList.push(e.target.result);
+				imageUtil.selectedFileNameList.push(file.name);
 			}
 			reader.readAsDataURL(file);
 		})
 	}
 
 	,doUpload : function(fileData){
-		var originalFileName = $('[data-wv-encoding-img-ready]')[0].files[0].name;
 		console.log(fileData);
-		console.log(originalFileName);
+		console.log(imageUtil.propsList);
 		//   $.ajax({
 		//       type: "POST",
 		//       url: WEB_ROOT + app.interfaceKey + "/fileControl",
@@ -67,7 +94,9 @@ imageUtil = {
 		//       error: function (e) {
 		//       }
 		//   });
+		imageUtil.selectedFileList = [];
 	}
+
 	/**
 	 * 이미지 압축기
 	 * 이건 진짜 오브젝트 아님
@@ -99,7 +128,6 @@ imageUtil = {
 				}
 			}
 
-
 			canvas.width = width;
 			canvas.height = height;
 			canvas.getContext("2d").drawImage(img, 0, 0, width, height);
@@ -117,6 +145,8 @@ imageUtil = {
 		var img = new Image();
 		img.onload = function () {
 			var compressedData = _this.compressImage(img, maxSize, quality);
+			//_this.encodedFileInfo.fileData = compressedData;
+			//_this.encodedFileList.push(_this.encodedFileInfo);
 			if (onComplete) {
 				onComplete(compressedData);
 			}
@@ -126,14 +156,13 @@ imageUtil = {
 		
 	,setProps: function (target) { // 이거는 DOM에 있는게 맞는 객체 함수임.
 			var _this = this;
-			var propsList = [];
 			var props = $(target).attr('data-wv-encoding-img-ready');
 			props = props.replace(/\}/g, "");
 			props = props.replace(/\{/g, "");
 			props = props.replace(/\./g, "");
 			propsList = props.split(",");
 
-			var propsObj = {};
+			propsObj = {};
 			for (var index in propsList) {
 				var tempList = [];
 				tempList = propsList[index].split(":");
@@ -143,6 +172,7 @@ imageUtil = {
 			for (var key in propsObj) {
 				_this[key] = propsObj[key];
 			}
+			imageUtil.propsList.push(propsObj);
 			console.log(propsObj);
 		}
 	/**
