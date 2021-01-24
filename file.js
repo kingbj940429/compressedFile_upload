@@ -60,6 +60,7 @@ imageUtil = {
 							if (len === j + 1) {
 								imageUtil.doUpload(Object.encodedFileList, function () {
 									imageUtil.destroy();
+									$("[data-wv-encoding-img-ready]").empty();
 								});
 							}
 						});
