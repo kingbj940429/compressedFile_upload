@@ -21,7 +21,15 @@ imageUtil = {
 					$($("[data-wv-encoding-img-ready]")[index]).on("change", imageObject.prototype.onImageSelected);
 					$($("[data-wv-encoding-img-ready]")[index]).on("change", function(){
 						imageObject.prototype.index = index;
-						
+						var len = imageObject.prototype.selectedFileInfoList.length;
+						if(len > 0){
+							//for(var k=0;k<len;k++){
+								if(imageObject.prototype.selectedFileInfoList[index].fileIndex == index){
+									imageObject.prototype.selectedFileList = [];
+									imageObject.prototype.selectedFileInfoList = [];
+								}
+							//}
+						}
 					});
 					//$($("[data-wv-encoding-img-ready]")[index]).on("change", imageUtil.onLimitFileSize);
 				})(i);
@@ -99,7 +107,7 @@ imageUtil = {
 
 	,doUpload: function (fileData, onComplete) {
 			console.log(fileData);
-			console.log(imageUtil.propsList);
+			//console.log(imageUtil.propsList);
 
 			//form 태그에 대비하기 위한
 			var form = $("[data-wv-encoding-img-send]").closest('form');
