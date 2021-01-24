@@ -2,12 +2,13 @@ imageUtil = {
 
 	maxSize: 2560
 	,quality: 1.0
-	,limitByte: null
+	,limitByte: 170000 //KB 기준 , 1MB = 100000KB
 	,canvas: null
 	,propsList: []
 
 	,init: function () {
 			var _this = this;
+			_this.setProps();
 			_this.registEvent();
 		}
 
@@ -24,63 +25,37 @@ imageUtil = {
 			//최종 버튼 눌렀을 떄
 			$($("[data-wv-encoding-img-send]")[0]).on("click", _this.onUploadBtnClick);
 
-			// $("input[type=file]").on('change', function (e) {
-			// 	if (!$(this).val()) return;
-			// 	var len = this.files.length;
-			// 	console.log(len);
-
-			// 	for(var i=0;i<len;i++){
-			// 		var f = this.files[i];
-			// 		var size = f.size || f.fileSize; //f.size가 없으면 f.fileSize가 size
-	
-
-			// 		var limit = 150000;
-	
-	
-			// 		if (size > limit) {
-			// 			alert('파일용량은 20mb 를 넘을수 없습니다.');
-			// 			$(this).val('');
-			// 			return false;
-			// 		}
-			// 		$(this).parent().find('input[type=text]').val($(this).val());
-			// 	}
-			// })
 		}
 
-	,onLimitFileSize : function(e){
-		if (!$(this).val()) return;
-		var len = this.files.length;
-		console.log(len);
-
+	,onLimitFileSize : function(e, _this){
+		if (!$(_this).val()) return;
+		var len = _this.files.length;
 		for(var i=0;i<len;i++){
-			var f = this.files[i];
+			var f = _this.files[i];
 			var size = f.size || f.fileSize; //f.size가 없으면 f.fileSize가 size
 
-
-			var limit = 200000;
-
-
+			var limit = imageUtil.limitByte;
+			
 			if (size > limit) {
-				alert('파일용량은 20mb 를 넘을수 없습니다.');
-				$(this).val('');
+				alert(`파일용량은 ${limit/100000}MB 를 넘을수 없습니다.`);
+				$($('[data-wv-encoding-img-ready]')[0]).empty();
+				$(_this).val('');
 				return false;
 			}
-			$(this).parent().find('input[type=text]').val($(this).val());
+			$(_this).parent().find('input[type=text]').val($(_this).val());
 		}
 	}
 
 	,onUploadBtnClick: function (e) {
 			var Object = imageObject.prototype;
 			var len = Object.selectedFileList.length;
-			imageUtil.setProps(e.target);
 
 			for (var i = 0; i < len; i++) {
 				(function (j) {
 						imageUtil.compressImageByData(Object.selectedFileList[j], 1280, imageUtil.quality, function (result) {
+							$($('.encoded-file-tag')[j]).val(result);
 							Object.encodedFileInfo = {};
 							Object.encodedFileInfo.fileData = result;
-							Object.encodedFileInfo.fileName = Object.selectedFileInfoList[j].fileName;
-							Object.encodedFileInfo.fileIndex = Object.selectedFileInfoList[j].fileIndex;
 							Object.encodedFileList.push(Object.encodedFileInfo);
 							if (len === j + 1) {
 								imageUtil.doUpload(Object.encodedFileList, function () {
@@ -95,14 +70,13 @@ imageUtil = {
 	,doUpload: function (fileData, onComplete) {
 		var len = $("[data-wv-encoding-img-ready] > input").length;
 		var fileData = [];
-		for(var i=0;i<len;i++){
+		for (var i = 0; i < len; i++) {
 			fileData.push({
-				fileString : $($("[data-wv-encoding-img-ready] > input")[i]).val()
-				,fileName : $($("[data-wv-encoding-img-ready] > .encoded-file-tag")[i]).attr('name')
+				fileString: $($("[data-wv-encoding-img-ready] > input")[i]).val(),
+				fileName: $($("[data-wv-encoding-img-ready] > .encoded-file-tag")[i]).attr('name')
 			})
 		}
 		console.log(fileData);
-		//console.log(imageUtil.propsList);
 
 		//form 태그에 대비하기 위한
 		var form = $("[data-wv-encoding-img-send]").closest('form');
@@ -125,7 +99,7 @@ imageUtil = {
 		if (onComplete) {
 			onComplete();
 		}
-		}
+	}
 	/**
 	 * 이미지데이터를 이용한 압축하기
 	 */
@@ -175,10 +149,9 @@ imageUtil = {
 			return canvas.toDataURL("image/jpeg", quality); //실질적으로 압축하는 코드
 		}
 
-	,setProps: function (target) {
-			console.log(target);
+	,setProps: function () {
 			var _this = this;
-			var props = $(target).attr('data-wv-encoding-img-send');
+			var props = $('[data-wv-encoding-img-send]').attr('data-wv-encoding-img-send');
 			props = props.replace(/\}/g, "");
 			props = props.replace(/\{/g, "");
 			//props = props.replace(/\./g, "");
@@ -196,9 +169,13 @@ imageUtil = {
 			}
 			imageUtil.propsList.push(propsObj);
 
-			if(imageUtil.propsList[0].quality){
+			if(imageUtil.propsList[0]){
 				_this.quality = parseFloat(imageUtil.propsList[0].quality);	
 			}
+			if(imageUtil.propsList[0]){
+				_this.limitByte = parseFloat(imageUtil.propsList[0].limitByte);	
+			}
+
 	}
 
 	/**
@@ -250,16 +227,6 @@ imageUtil = {
 			return cimg;
 
 		}
-	/**
-	 * 허용 파일 사이즈 체크
-	 */
-	,checkLimitFileSize : function(fileSize){
-		var limitSize = this.limitByte;
-		if(limitSize < fileSize){
-			return false;
-		}
-		return true;
-	}
 
 
 
@@ -301,7 +268,6 @@ imageUtil = {
 	,destroy: function () {
 		imageObject.prototype.encodedFileInfo = null;
 		imageObject.prototype.selectedFileList = [];
-		imageObject.prototype.selectedFileInfoList = [];
 		imageObject.prototype.encodedFileList = [];
 		this.propsList = [];
 		var len = $('[data-wv-encoding-img-ready]').length;
@@ -319,24 +285,27 @@ var imageObject = function () {
 
 imageObject.prototype = {
 	selectedFileList: []
-	,selectedFileInfoList: []
 	,encodedFileInfo: {}
 	,encodedFileList: []
 	,onImageSelected: function (e) {
-		//imageUtil.selectedFileList.length = 0;
 		var _this = this;
+		imageUtil.onLimitFileSize(e, _this);
 		var inputField = e.target; // 첫번째 ready 태그 가져오고
 		var files = inputField.files; //그에 대한 파일을 담는다.
-		$(inputField).empty();
+
+		imageObject.prototype.destroy(inputField);
 		$.each(files, function (index, file) { //파일첨부가 여러개일때에 대한.
 			var reader = new FileReader();
 			reader.onload = function (e) {
 				imageObject.prototype.selectedFileList.push(e.target.result);
-				imageObject.prototype.selectedFileInfoList.push({fileName : file.name, fileSize : file.size, fileIndex : imageObject.prototype.index});
 				$(inputField).append(`<input class="encoded-file-tag" style="hidden" value="${e.target.result}" name="${file.name}">`);
 			}
 			reader.readAsDataURL(file);
 		})
+	}
+
+	,destroy : function(inputField){
+		$(inputField).empty();
 	}
 
 }
