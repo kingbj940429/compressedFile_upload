@@ -1,8 +1,8 @@
 imageUtil = {
 
 	maxSize: 2560
-	,quality: 1.0
-	,limitByte: 170000 //KB 기준 , 1MB = 100000KB
+	,quality: 0.5
+	,limitByte: 200000 //KB 기준 , 1MB = 100000KB
 	,canvas: null
 	,propsList: []
 
@@ -38,7 +38,7 @@ imageUtil = {
 			
 			if (size > limit) {
 				alert(`파일용량은 ${limit/100000}MB 를 넘을수 없습니다.`);
-				$($('[data-wv-encoding-img-ready]')[0]).empty();
+				$($(e.target)).empty();
 				$(_this).val('');
 				return false;
 			}
@@ -153,22 +153,25 @@ imageUtil = {
 	,setProps: function () {
 			var _this = this;
 			var props = $('[data-wv-encoding-img-send]').attr('data-wv-encoding-img-send');
-			props = props.replace(/\}/g, "");
-			props = props.replace(/\{/g, "");
-			//props = props.replace(/\./g, "");
-			propsList = props.split(",");
-
-			var propsObj = {};
-			for (var index in propsList) {
-				var tempList = [];
-				tempList = propsList[index].split(":");
-				tempList[0] = tempList[0].trim();
-				propsObj[tempList[0]] = tempList[1].trim();
+			
+			if(props){
+				props = props.replace(/\}/g, "");
+				props = props.replace(/\{/g, "");
+				//props = props.replace(/\./g, "");
+				propsList = props.split(",");
+	
+				var propsObj = {};
+				for (var index in propsList) {
+					var tempList = [];
+					tempList = propsList[index].split(":");
+					tempList[0] = tempList[0].trim();
+					propsObj[tempList[0]] = tempList[1].trim();
+				}
+				for (var key in propsObj) {
+					_this[key] = propsObj[key];
+				}
+				imageUtil.propsList.push(propsObj);
 			}
-			for (var key in propsObj) {
-				_this[key] = propsObj[key];
-			}
-			imageUtil.propsList.push(propsObj);
 
 			if(imageUtil.propsList[0]){
 				_this.quality = parseFloat(imageUtil.propsList[0].quality);	
