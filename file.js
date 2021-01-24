@@ -19,19 +19,6 @@ imageUtil = {
 			for (var i = 0; i < len; i++) {
 				(function (index) {
 					$($("[data-wv-encoding-img-ready]")[index]).on("change", imageObject.prototype.onImageSelected);
-					$($("[data-wv-encoding-img-ready]")[index]).on("change", function(){
-						imageObject.prototype.index = index;
-						var len = imageObject.prototype.selectedFileInfoList.length;
-						if(len > 0){
-							//for(var k=0;k<len;k++){
-								if(imageObject.prototype.selectedFileInfoList[index].fileIndex == index){
-									imageObject.prototype.selectedFileList = [];
-									imageObject.prototype.selectedFileInfoList = [];
-								}
-							//}
-						}
-					});
-					//$($("[data-wv-encoding-img-ready]")[index]).on("change", imageUtil.onLimitFileSize);
 				})(i);
 			}
 			//최종 버튼 눌렀을 떄
@@ -106,30 +93,38 @@ imageUtil = {
 		}
 
 	,doUpload: function (fileData, onComplete) {
-			console.log(fileData);
-			//console.log(imageUtil.propsList);
+		var len = $("[data-wv-encoding-img-ready] > input").length;
+		var fileData = [];
+		for(var i=0;i<len;i++){
+			fileData.push({
+				fileString : $($("[data-wv-encoding-img-ready] > input")[i]).val()
+				,fileName : $($("[data-wv-encoding-img-ready] > .encoded-file-tag")[i]).attr('name')
+			})
+		}
+		console.log(fileData);
+		//console.log(imageUtil.propsList);
 
-			//form 태그에 대비하기 위한
-			var form = $("[data-wv-encoding-img-send]").closest('form');
-			form.encodedFiles = fileData;
-		
-			//   $.ajax({
-			//       type: "POST",
-			//       url: WEB_ROOT + app.interfaceKey + "/fileControl",
-			//       data: {
-			//     	  userfile : fileData,//여기를 리스트로 해서 서버에 뿌려주면 다중으로 가능할거 같은데...
-			//     	  originalname : originalFileName
-			//       },
-			//       timeout: 600000,
-			//       success: function (result) {
-			//     	  console.log("성공");
-			//       },
-			//       error: function (e) {
-			//       }
-			//   });
-			if (onComplete) {
-				onComplete();
-			}
+		//form 태그에 대비하기 위한
+		var form = $("[data-wv-encoding-img-send]").closest('form');
+		form.encodedFiles = fileData;
+
+		//   $.ajax({
+		//       type: "POST",
+		//       url: WEB_ROOT + app.interfaceKey + "/fileControl",
+		//       data: {
+		//     	  userfile : fileData,//여기를 리스트로 해서 서버에 뿌려주면 다중으로 가능할거 같은데...
+		//     	  originalname : originalFileName
+		//       },
+		//       timeout: 600000,
+		//       success: function (result) {
+		//     	  console.log("성공");
+		//       },
+		//       error: function (e) {
+		//       }
+		//   });
+		if (onComplete) {
+			onComplete();
+		}
 		}
 	/**
 	 * 이미지데이터를 이용한 압축하기
@@ -327,23 +322,18 @@ imageObject.prototype = {
 	,selectedFileInfoList: []
 	,encodedFileInfo: {}
 	,encodedFileList: []
-	,index : null
-	// ,init : function(){
-	// 	imageObject.prototype.encodedFileInfo = null;
-	// 	imageObject.prototype.selectedFileList = [];
-	// 	imageObject.prototype.selectedFileInfoList = [];
-	// 	imageObject.prototype.encodedFileList = [];
-	// }
-		
 	,onImageSelected: function (e) {
 		//imageUtil.selectedFileList.length = 0;
+		var _this = this;
 		var inputField = e.target; // 첫번째 ready 태그 가져오고
 		var files = inputField.files; //그에 대한 파일을 담는다.
+		$(inputField).empty();
 		$.each(files, function (index, file) { //파일첨부가 여러개일때에 대한.
 			var reader = new FileReader();
 			reader.onload = function (e) {
 				imageObject.prototype.selectedFileList.push(e.target.result);
 				imageObject.prototype.selectedFileInfoList.push({fileName : file.name, fileSize : file.size, fileIndex : imageObject.prototype.index});
+				$(inputField).append(`<input class="encoded-file-tag" style="hidden" value="${e.target.result}" name="${file.name}">`);
 			}
 			reader.readAsDataURL(file);
 		})
